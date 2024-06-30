@@ -1,0 +1,37 @@
+<div class="container">
+  <h1>Astronaut Duties Search</h1>
+  <div class="search-container">
+    <label for="astronautName">Astronaut Name: </label>
+    <input [(ngModel)]="searchName" placeholder="Enter name" id="astronautName" (keyup.enter)="searchDuties()" />
+    <button mat-raised-button color="primary" (click)="searchDuties()">Search</button>
+  </div>
+  <div *ngIf="loading" class="spinner">
+    <mat-spinner></mat-spinner>
+  </div>
+  <div *ngIf="errorMessage" class="error">
+    {{ errorMessage }}
+  </div>
+  <div class="grid-container">
+    <table mat-table [dataSource]="duties" class="mat-elevation-z8">
+      <ng-container matColumnDef="dutyTitle">
+        <th mat-header-cell *matHeaderCellDef> Duty Title </th>
+        <td mat-cell *matCellDef="let duty"> {{ duty.dutyTitle }} </td>
+      </ng-container>
+      <ng-container matColumnDef="rank">
+        <th mat-header-cell *matHeaderCellDef> Rank </th>
+        <td mat-cell *matCellDef="let duty"> {{ duty.rank }} </td>
+      </ng-container>
+      <ng-container matColumnDef="dutyStartDate">
+        <th mat-header-cell *matHeaderCellDef> Start Date </th>
+        <td mat-cell *matCellDef="let duty"> {{ duty.dutyStartDate | date }} </td>
+      </ng-container>
+      <ng-container matColumnDef="dutyEndDate">
+        <th mat-header-cell *matHeaderCellDef> End Date </th>
+        <td mat-cell *matCellDef="let duty"> {{ duty.dutyEndDate | date }} </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+  </div>
+</div>

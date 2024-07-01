@@ -2,7 +2,7 @@
   <h1>Astronaut Duties Search</h1>
   <div class="search-container">
     <label for="astronautName">Astronaut Name: </label>
-    <input [(ngModel)]="searchName" placeholder="Enter name" id="astronautName" (keyup.enter)="searchDuties()" />
+    <input [(ngModel)]="searchName" placeholder="Enter name" id="astronautName" (keyup)="typing=true" (keyup.enter)="searchDuties()" />
     <button mat-raised-button color="primary" (click)="searchDuties()">Search</button>
   </div>
   <div *ngIf="loading" class="spinner">
@@ -11,7 +11,7 @@
   <div *ngIf="errorMessage" class="error">
     {{ errorMessage }}
   </div>
-  <div class="grid-container" *ngIf="!loading && duties.length > 0 && errorMessage === ''">
+  <div class="grid-container" *ngIf="!loading && duties.length > 0 && !typing && !errorMessage">
     <table mat-table [dataSource]="duties" class="mat-elevation-z8">
       <ng-container matColumnDef="dutyTitle">
         <th mat-header-cell *matHeaderCellDef> Duty Title </th>

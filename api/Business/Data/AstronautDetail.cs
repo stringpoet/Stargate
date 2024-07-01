@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace StargateAPI.Business.Data
 {
@@ -19,6 +20,7 @@ namespace StargateAPI.Business.Data
 
         public DateTime? CareerEndDate { get; set; }
 
+        [JsonIgnore]
         public virtual Person? Person { get; set; }
     }
 

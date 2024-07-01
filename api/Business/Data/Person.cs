@@ -12,7 +12,7 @@ namespace StargateAPI.Business.Data
 
         public string Name { get; set; } = string.Empty;
 
-        [JsonIgnore]
+
         public AstronautDetail? AstronautDetail { get; set; }
         [JsonIgnore]
         public ICollection<AstronautDuty> AstronautDuties { get; set; } = new HashSet<AstronautDuty>();

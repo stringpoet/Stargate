@@ -9,6 +9,7 @@ import { AstronautDutyService, AstronautDuty } from '../../services/astronaut-du
 export class AstronautDutiesComponent {
   duties: AstronautDuty[] = [];
   loading = false;
+  typing = false;
   errorMessage = '';
   searchName = '';
   displayedColumns: string[] = ['dutyTitle', 'rank', 'dutyStartDate', 'dutyEndDate'];
@@ -16,6 +17,7 @@ export class AstronautDutiesComponent {
   constructor(private dutyService: AstronautDutyService) { }
 
   searchDuties() {
+    this.typing = false;
     this.loading = true;
     this.errorMessage = '';
     this.duties = [];
@@ -29,6 +31,9 @@ export class AstronautDutiesComponent {
     this.dutyService.getDutiesByName(this.searchName).subscribe({
       next: (response: any) => {
         this.duties = Array.isArray(response.astronautDuties) ? response.astronautDuties : [];
+        if (this.duties.length === 0) {
+          this.errorMessage = 'No duties found for '.concat(this.searchName);
+        }
         this.loading = false;
       },
       error: (error) => {

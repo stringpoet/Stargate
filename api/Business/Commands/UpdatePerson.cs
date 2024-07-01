@@ -1,8 +1,8 @@
 ﻿using StargateAPI.Controllers;
 using MediatR;
-using StargateAPI.Business.Data;
-using Microsoft.EntityFrameworkCore;
 using MediatR.Pipeline;
+using StargateAPI.Business.Repositories;
+using StargateAPI.Business.Services;
 
 namespace StargateAPI.Business.Commands
 {
@@ -14,46 +14,39 @@ namespace StargateAPI.Business.Commands
 
     public class UpdatePersonPreProcessor : IRequestPreProcessor<UpdatePerson>
     {
-        private readonly StargateContext _context;
+        private readonly IPersonRepository _personRepository;
+        private readonly ILogService _logService;
 
-        public UpdatePersonPreProcessor(StargateContext context) => _context = context;
-
-        public Task Process(UpdatePerson request, CancellationToken cancellationToken)
+        public UpdatePersonPreProcessor(IPersonRepository personRepository, ILogService logService)
         {
-            var person = _context.People.AsNoTracking().FirstOrDefault(z => z.Name == request.Name);
+            _personRepository = personRepository;
+            _logService = logService;
+        }
 
-            if (person is null)
+        public async Task Process(UpdatePerson request, CancellationToken cancellationToken)
+        {
+            var person = await _personRepository.GetByNameAsync(request.Name, cancellationToken);
+
+            if (person == null)
             {
-                _context.ExceptionLog.Add(new ExceptionLog { Process = "Update Person", Message = $"{request.Name} not found" });
-                _context.SaveChanges(); 
-                throw new BadHttpRequestException("Person Not Found"); 
+                await _logService.LogExceptionAsync("Update Person", $"{request.Name} not found", cancellationToken);
+                throw new BadHttpRequestException("Person not found");
             }
-
-            return Task.CompletedTask;
         }
     }
 
     public class UpdatePersonHandler : IRequestHandler<UpdatePerson, BaseResponse>
     {
-        private readonly StargateContext _context;
+        private readonly IPersonService _personService;
 
-        public UpdatePersonHandler(StargateContext context) => _context = context;
-
-        public async Task<BaseResponse> Handle(UpdatePerson request, CancellationToken cancellationToken)
+        public UpdatePersonHandler(IPersonService personService)
         {
-            var person = await _context.People.FirstAsync(p => p.Name == request.Name, cancellationToken);
+            _personService = personService;
+        }
 
-            person.Name = request.NewName;
-
-            await _context.SuccessLog.AddAsync(new SuccessLog { Process = "Update Person", Message = $"Name: {request.Name}, New Name: {request.NewName}" }, cancellationToken);
-            await _context.SaveChangesAsync(cancellationToken);
-
-            return new BaseResponse
-            {
-                Success = true,
-                Message = "Person updated successfully",
-                ResponseCode = 200
-            };
+        public Task<BaseResponse> Handle(UpdatePerson request, CancellationToken cancellationToken)
+        {
+            return _personService.UpdatePersonAsync(request, cancellationToken);
         }
     }
 }

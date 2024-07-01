@@ -44,7 +44,7 @@ namespace StargateUnitTests.Controllers
                 Name = "John",
                 Rank = "LT",
                 DutyTitle = "Commander",
-                DutyStartDate = DateTime.Now
+                DutyStartDate = DateTime.UtcNow
             };
             var result = await _controller.CreateAstronautDuty(request);
 

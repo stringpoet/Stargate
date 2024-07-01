@@ -1,7 +1,7 @@
 ﻿using MediatR;
 using MediatR.Pipeline;
-using Microsoft.EntityFrameworkCore;
-using StargateAPI.Business.Data;
+using StargateAPI.Business.Repositories;
+using StargateAPI.Business.Services;
 using StargateAPI.Controllers;
 
 namespace StargateAPI.Business.Commands
@@ -13,52 +13,39 @@ namespace StargateAPI.Business.Commands
 
     public class CreatePersonPreProcessor : IRequestPreProcessor<CreatePerson>
     {
-        private readonly StargateContext _context;
+        private readonly IPersonRepository _personRepository;
+        private readonly ILogService _logService;
 
-        public CreatePersonPreProcessor(StargateContext context)
+        public CreatePersonPreProcessor(IPersonRepository personRepository, ILogService logService)
         {
-            _context = context;
+            _personRepository = personRepository;
+            _logService = logService;
         }
 
-        public Task Process(CreatePerson request, CancellationToken cancellationToken)
+        public async Task Process(CreatePerson request, CancellationToken cancellationToken)
         {
-            var person = _context.People.AsNoTracking().FirstOrDefault(z => z.Name == request.Name);
+            var person = await _personRepository.GetByNameAsync(request.Name, cancellationToken);
 
-            if (person is not null) {
-                _context.ExceptionLog.Add(new ExceptionLog { Process = "Create Person", Message = $"{person.Name} already exists" });
-                _context.SaveChanges();
-                throw new BadHttpRequestException("Person already exists"); 
+            if (person != null)
+            {
+                await _logService.LogExceptionAsync("Create Person", $"{request.Name} already exists", cancellationToken);
+                throw new BadHttpRequestException("Person already exists");
             }
-
-            return Task.CompletedTask;
-        }    
+        }
     }
 
     public class CreatePersonHandler : IRequestHandler<CreatePerson, CreatePersonResult>
     {
-        private readonly StargateContext _context;
+        private readonly IPersonService _personService;
 
-        public CreatePersonHandler(StargateContext context)
+        public CreatePersonHandler(IPersonService personService)
         {
-            _context = context;
+            _personService = personService;
         }
 
-        public async Task<CreatePersonResult> Handle(CreatePerson request, CancellationToken cancellationToken)
+        public Task<CreatePersonResult> Handle(CreatePerson request, CancellationToken cancellationToken)
         {
-            var newPerson = new Person()
-            {
-                Name = request.Name
-            };
-
-            await _context.People.AddAsync(newPerson, cancellationToken);
-            await _context.SuccessLog.AddAsync(new SuccessLog { Process = "Create Person", Message = $"Name: {request.Name}" }, cancellationToken);
-
-            await _context.SaveChangesAsync(cancellationToken);
-
-            return new CreatePersonResult()
-            {
-                Id = newPerson.Id
-            };          
+            return _personService.CreatePersonAsync(request, cancellationToken);
         }
     }
 

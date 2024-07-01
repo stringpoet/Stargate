@@ -1,7 +1,7 @@
 ﻿using MediatR;
 using MediatR.Pipeline;
-using Microsoft.EntityFrameworkCore;
-using StargateAPI.Business.Data;
+using StargateAPI.Business.Repositories;
+using StargateAPI.Business.Services;
 using StargateAPI.Controllers;
 
 namespace StargateAPI.Business.Commands
@@ -19,124 +19,45 @@ namespace StargateAPI.Business.Commands
 
     public class CreateAstronautDutyPreProcessor : IRequestPreProcessor<CreateAstronautDuty>
     {
-        private readonly StargateContext _context;
+        private readonly IPersonRepository _personRepository;
+        private readonly ILogService _logService;
 
-        public CreateAstronautDutyPreProcessor(StargateContext context)
+        public CreateAstronautDutyPreProcessor(IPersonRepository personRepository, ILogService logService)
         {
-            _context = context;
+            _personRepository = personRepository;
+            _logService = logService;
         }
 
         public async Task Process(CreateAstronautDuty request, CancellationToken cancellationToken)
         {
-            var person = await _context.People.AsNoTracking().Where(z => z.Name == request.Name)
-                .Include(p => p.AstronautDuties)
-                .Include(p => p.AstronautDetail)
-                .SingleOrDefaultAsync(cancellationToken);
+            var person = await _personRepository.GetByNameAsync(request.Name, cancellationToken);
 
-            if (person is null)
+            if (person == null)
             {
-                await _context.ExceptionLog.AddAsync(new ExceptionLog { Process = "Create Astronaut Duty", Message = $"Person Not Found: {request.Name}" }, cancellationToken);
-                await _context.SaveChangesAsync(cancellationToken);
+                await _logService.LogExceptionAsync("Create Astronaut Duty", $"Person Not Found: {request.Name}", cancellationToken);
                 throw new BadHttpRequestException("Person not found");
             }
 
             if (person.AstronautDuties.Any(d => d.DutyTitle == request.DutyTitle && d.DutyStartDate == request.DutyStartDate))
             {
-                await _context.ExceptionLog.AddAsync(new ExceptionLog { Process = "Create Astronaut Duty", Message = $"{person.Name} already has a duty of {request.DutyTitle} with a start date of {request.DutyStartDate}" }, cancellationToken);
-                await _context.SaveChangesAsync(cancellationToken);
+                await _logService.LogExceptionAsync("Create Astronaut Duty", $"{person.Name} already has a duty of {request.DutyTitle} with a start date of {request.DutyStartDate}", cancellationToken);
                 throw new BadHttpRequestException("Duty already exists");
             }
-
-            await Task.CompletedTask;
         }
     }
 
     public class CreateAstronautDutyHandler : IRequestHandler<CreateAstronautDuty, CreateAstronautDutyResult>
     {
-        private readonly StargateContext _context;
+        private readonly IAstronautDutyService _astronautDutyService;
 
-        public CreateAstronautDutyHandler(StargateContext context)
+        public CreateAstronautDutyHandler(IAstronautDutyService astronautDutyService)
         {
-            _context = context;
+            _astronautDutyService = astronautDutyService;
         }
-        public async Task<CreateAstronautDutyResult> Handle(CreateAstronautDuty request, CancellationToken cancellationToken)
+
+        public Task<CreateAstronautDutyResult> Handle(CreateAstronautDuty request, CancellationToken cancellationToken)
         {
-            var person = await _context.People.AsNoTracking().Where(z => z.Name == request.Name)
-                .Include(p => p.AstronautDuties)
-                .Include(p => p.AstronautDetail)
-                .SingleAsync(cancellationToken);
-
-            if (person.AstronautDetail is null)
-            {
-                var astronautDetail = new AstronautDetail { 
-                    PersonId = person.Id,
-                    CurrentDutyTitle = request.DutyTitle,
-                    CurrentRank = request.Rank,
-                    CareerStartDate = request.DutyStartDate.Date,
-                    CareerEndDate = request.DutyTitle == "RETIRED" ? request.DutyStartDate.Date : null
-                };
-
-                await _context.AstronautDetails.AddAsync(astronautDetail, cancellationToken);
-                await _context.SuccessLog.AddAsync(new SuccessLog
-                {
-                    Process = "Create Astronaut Duty: Create Astronaut Detail",
-                    Message = $"Name: {person.Name}, Title: {request.DutyTitle}, Rank: {request.Rank}, StartDate: {astronautDetail.CareerStartDate}, EndDate {astronautDetail.CareerEndDate}"
-                }, cancellationToken);
-            }
-            else
-            {
-                person.AstronautDetail.CurrentDutyTitle = request.DutyTitle;
-                person.AstronautDetail.CurrentRank = request.Rank;
-                if (request.DutyTitle == "RETIRED")
-                {
-                    person.AstronautDetail.CareerEndDate = request.DutyStartDate.AddDays(-1).Date;
-                }
-
-                _context.AstronautDetails.Update(person.AstronautDetail); 
-                await _context.SuccessLog.AddAsync(new SuccessLog
-                {
-                    Process = "Create Astronaut Duty: Update Astronaut Detail",
-                    Message = $"Name: {person.Name}, Title: {request.DutyTitle}, Rank: {request.Rank}, StartDate: {person.AstronautDetail.CareerStartDate}, EndDate {person.AstronautDetail.CareerEndDate}"
-                }, cancellationToken);
-            }
-
-            var mostRecentDuty = person.AstronautDuties
-                .OrderByDescending(ad => ad.DutyStartDate)
-                .FirstOrDefault();
-
-            if (mostRecentDuty != null)
-            {
-                mostRecentDuty.DutyEndDate = request.DutyStartDate.AddDays(-1).Date;
-                _context.AstronautDuties.Update(mostRecentDuty);
-                await _context.SuccessLog.AddAsync(new SuccessLog
-                {
-                    Process = "Create Astronaut Duty: Update Astronaut Duty End Date",
-                    Message = $"Duty Id: {mostRecentDuty.Id}, EndDate {mostRecentDuty.DutyEndDate}"
-                }, cancellationToken);
-            }
-
-            var newAstronautDuty = new AstronautDuty()
-            {
-                PersonId = person.Id,
-                Rank = request.Rank,
-                DutyTitle = request.DutyTitle,
-                DutyStartDate = request.DutyStartDate.Date,
-                DutyEndDate = null
-            };
-
-            await _context.AstronautDuties.AddAsync(newAstronautDuty, cancellationToken);
-            await _context.SuccessLog.AddAsync(new SuccessLog
-            {
-                Process = "Create Astronaut Duty: Add Astronaut Duty",
-                Message = $"Name: {person.Name}, Title: {request.DutyTitle}, Rank: {request.Rank}, StartDate: {newAstronautDuty.DutyStartDate}"
-            }, cancellationToken);
-
-            await _context.SaveChangesAsync(cancellationToken);
-
-            return new CreateAstronautDutyResult()
-            {
-                Id = newAstronautDuty.Id
-            };
+            return _astronautDutyService.CreateDutyAsync(request, cancellationToken);
         }
     }
 

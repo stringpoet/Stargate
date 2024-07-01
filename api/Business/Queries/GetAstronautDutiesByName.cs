@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using StargateAPI.Business.Data;
 using StargateAPI.Business.Dtos;
+using StargateAPI.Business.Services;
 using StargateAPI.Controllers;
 
 namespace StargateAPI.Business.Queries
@@ -30,8 +31,8 @@ namespace StargateAPI.Business.Queries
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (person is not null) {
-                result.Person = new PersonAstronaut(person);
-                result.AstronautDuties = person.AstronautDuties.ToList();
+                result.Person = PersonMapper.ToPersonAstronaut(person);
+                result.AstronautDuties = [.. person.AstronautDuties];
             }
             else
             {

@@ -1,8 +1,8 @@
-﻿using Dapper;
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using StargateAPI.Business.Data;
 using StargateAPI.Business.Dtos;
+using StargateAPI.Business.Services;
 using StargateAPI.Controllers;
 
 namespace StargateAPI.Business.Queries
@@ -25,7 +25,7 @@ namespace StargateAPI.Business.Queries
             {
                 People = await _context.People
                     .Include(p => p.AstronautDetail)
-                    .Select(p => new PersonAstronaut(p)).ToListAsync(cancellationToken)
+                    .Select(p => PersonMapper.ToPersonAstronaut(p)).ToListAsync(cancellationToken)
             };
 
             return result;

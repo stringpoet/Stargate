@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using StargateAPI.Business.Commands;
 using StargateAPI.Business.Data;
+using StargateAPI.Business.Repositories;
+using StargateAPI.Business.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +23,12 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<StargateContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("StarbaseApiDatabase")));
+
+builder.Services.AddScoped<IPersonRepository, PersonRepository>();
+
+builder.Services.AddScoped<IPersonService, PersonService>();
+builder.Services.AddScoped<IAstronautDutyService, AstronautDutyService>();
+builder.Services.AddScoped<ILogService, LogService>();
 
 builder.Services.AddMediatR(cfg =>
 {

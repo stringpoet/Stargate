@@ -60,14 +60,14 @@ namespace StargateAPI.Business.Commands
         }
         public async Task<CreateAstronautDutyResult> Handle(CreateAstronautDuty request, CancellationToken cancellationToken)
         {
-            var person = await _context.People.FirstOrDefaultAsync(p => p.Name == request.Name, cancellationToken);
+            var person = await _context.People.FirstAsync(p => p.Name == request.Name, cancellationToken);
 
             var astronautDetail = await _context.AstronautDetails.FirstOrDefaultAsync(ad => ad.PersonId == person.Id, cancellationToken);
 
             if (astronautDetail == null)
             {
                 astronautDetail = new AstronautDetail { 
-                    Id = person.Id,
+                    PersonId = person.Id,
                     CurrentDutyTitle = request.DutyTitle,
                     CurrentRank = request.Rank,
                     CareerStartDate = request.DutyStartDate.Date,

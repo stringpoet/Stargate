@@ -20,6 +20,12 @@ export class AstronautDutiesComponent {
     this.errorMessage = '';
     this.duties = [];
 
+    if (!this.searchName.trim()) {
+      this.errorMessage = 'Name is required';
+      this.loading = false;
+      return;
+    }
+
     this.dutyService.getDutiesByName(this.searchName).subscribe({
       next: (response: any) => {
         this.duties = Array.isArray(response.astronautDuties) ? response.astronautDuties : [];

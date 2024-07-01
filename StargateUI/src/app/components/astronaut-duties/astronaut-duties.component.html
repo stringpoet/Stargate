@@ -11,7 +11,7 @@
   <div *ngIf="errorMessage" class="error">
     {{ errorMessage }}
   </div>
-  <div class="grid-container">
+  <div class="grid-container" *ngIf="!loading && duties.length > 0 && errorMessage === ''">
     <table mat-table [dataSource]="duties" class="mat-elevation-z8">
       <ng-container matColumnDef="dutyTitle">
         <th mat-header-cell *matHeaderCellDef> Duty Title </th>

@@ -24,38 +24,14 @@ namespace StargateAPI.Business.Queries
         {
             var result = new GetAstronautDutiesByNameResult();
 
-            var query = from person in _context.People
-                        where person.Name == request.Name
-                        join detail in _context.AstronautDetails
-                        on person.Id equals detail.PersonId into personAstronaut
-                        from pa in personAstronaut.DefaultIfEmpty()
-                        select new PersonAstronaut
-                        {
-                            PersonId = person.Id,
-                            Name = person.Name,
-                            CurrentRank = pa.CurrentRank,
-                            CurrentDutyTitle = pa.CurrentDutyTitle,
-                            CareerStartDate = pa.CareerStartDate,
-                            CareerEndDate = pa.CareerEndDate
-                        };
+            var person = await _context.People.Where(p => p.Name == request.Name)
+                .Include(p => p.AstronautDuties)
+                .Include(p => p.AstronautDetail)
+                .FirstOrDefaultAsync(cancellationToken);
 
-            result.Person = await query.FirstOrDefaultAsync();
-
-            if (result.Person is not null) {
-                var duties = from duty in _context.AstronautDuties
-                        where duty.PersonId == result.Person.PersonId
-                        orderby duty.DutyStartDate descending
-                        select new AstronautDuty
-                        {
-                            Id = duty.Id,
-                            PersonId = result.Person.PersonId,
-                            Rank = duty.Rank,
-                            DutyTitle = duty.DutyTitle,
-                            DutyStartDate = duty.DutyStartDate,
-                            DutyEndDate = duty.DutyEndDate
-                        };
-
-                result.AstronautDuties = await duties.ToListAsync();
+            if (person is not null) {
+                result.Person = new PersonAstronaut(person);
+                result.AstronautDuties = person.AstronautDuties.ToList();
             }
             else
             {

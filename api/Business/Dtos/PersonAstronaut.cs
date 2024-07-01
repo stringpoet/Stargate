@@ -1,4 +1,6 @@
-﻿namespace StargateAPI.Business.Dtos
+﻿using StargateAPI.Business.Data;
+
+namespace StargateAPI.Business.Dtos
 {
     public class PersonAstronaut
     {
@@ -14,6 +16,14 @@
 
         public DateTime? CareerEndDate { get; set; }
 
-
+        public PersonAstronaut (Person fromPerson)
+        {
+            PersonId = fromPerson.Id;
+            Name = fromPerson.Name;
+            CurrentRank = fromPerson.AstronautDetail?.CurrentRank ?? "";
+            CurrentDutyTitle = fromPerson.AstronautDetail?.CurrentDutyTitle ?? "";
+            CareerStartDate = fromPerson.AstronautDetail?.CareerStartDate;
+            CareerEndDate = fromPerson.AstronautDetail?.CareerEndDate;
+        }
     }
 }

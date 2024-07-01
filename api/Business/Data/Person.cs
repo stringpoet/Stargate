@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace StargateAPI.Business.Data
 {
@@ -11,9 +12,10 @@ namespace StargateAPI.Business.Data
 
         public string Name { get; set; } = string.Empty;
 
-        public virtual AstronautDetail? AstronautDetail { get; set; }
-
-        public virtual ICollection<AstronautDuty> AstronautDuties { get; set; } = new HashSet<AstronautDuty>();
+        [JsonIgnore]
+        public AstronautDetail? AstronautDetail { get; set; }
+        [JsonIgnore]
+        public ICollection<AstronautDuty> AstronautDuties { get; set; } = new HashSet<AstronautDuty>();
 
     }
 

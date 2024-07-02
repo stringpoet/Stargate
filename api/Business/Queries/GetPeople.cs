@@ -1,8 +1,6 @@
 ﻿using MediatR;
-using Microsoft.EntityFrameworkCore;
-using StargateAPI.Business.Data;
 using StargateAPI.Business.Dtos;
-using StargateAPI.Business.Services;
+using StargateAPI.Business.Repositories;
 using StargateAPI.Controllers;
 
 namespace StargateAPI.Business.Queries
@@ -14,18 +12,18 @@ namespace StargateAPI.Business.Queries
 
     public class GetPeopleHandler : IRequestHandler<GetPeople, GetPeopleResult>
     {
-        public readonly StargateContext _context;
-        public GetPeopleHandler(StargateContext context)
+        private readonly IPersonRepository _personRepository;
+
+        public GetPeopleHandler(IPersonRepository personRepository)
         {
-            _context = context;
+            _personRepository = personRepository;
         }
+
         public async Task<GetPeopleResult> Handle(GetPeople request, CancellationToken cancellationToken)
         {
             var result = new GetPeopleResult
             {
-                People = await _context.People
-                    .Include(p => p.AstronautDetail)
-                    .Select(p => PersonMapper.ToPersonAstronaut(p)).ToListAsync(cancellationToken)
+                People = await _personRepository.GetAllAsync(cancellationToken)
             };
 
             return result;
@@ -34,7 +32,7 @@ namespace StargateAPI.Business.Queries
 
     public class GetPeopleResult : BaseResponse
     {
-        public List<PersonAstronaut> People { get; set; } = new List<PersonAstronaut> { };
+        public ICollection<PersonAstronaut> People { get; set; } = new List<PersonAstronaut> { };
 
     }
 }

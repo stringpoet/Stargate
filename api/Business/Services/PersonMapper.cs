@@ -5,7 +5,7 @@ namespace StargateAPI.Business.Services
 {
     public static class PersonMapper
     {
-        public static PersonAstronaut ToPersonAstronaut(Person person)
+        public static PersonAstronaut ToPersonAstronaut(Person? person)
         {
             ArgumentNullException.ThrowIfNull(person);
 

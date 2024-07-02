@@ -1,5 +1,6 @@
 ﻿using StargateAPI.Business.Commands;
 using StargateAPI.Business.Data;
+using StargateAPI.Business.Dtos;
 using StargateAPI.Business.Repositories;
 using StargateAPI.Controllers;
 
@@ -53,6 +54,18 @@ namespace StargateAPI.Business.Services
             await _logService.LogSuccessAsync("Create Person", $"Name: {request.Name}", cancellationToken);
 
             return new CreatePersonResult { Id = newPerson.Id };
+        }
+
+        public async Task<PersonAstronaut?> GetPersonByNameAsync(string name, CancellationToken cancellationToken)
+        {
+            var person = await _personRepository.GetByNameAsync(name, cancellationToken);
+
+            if (person == null)
+            {
+                return null;
+            }
+
+            return PersonMapper.ToPersonAstronaut(person);
         }
     }
 }

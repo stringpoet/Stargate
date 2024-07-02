@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StargateAPI.Business.Data;
+using StargateAPI.Business.Dtos;
+using StargateAPI.Business.Services;
 
 namespace StargateAPI.Business.Repositories
 {
@@ -32,6 +34,14 @@ namespace StargateAPI.Business.Repositories
         public async Task SaveChangesAsync(CancellationToken cancellationToken)
         {
             await _context.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task<ICollection<PersonAstronaut>> GetAllAsync(CancellationToken cancellationToken)
+        {
+            return await _context.People
+                .Include(p => p.AstronautDetail)
+                .Select(p => PersonMapper.ToPersonAstronaut(p))
+                .ToListAsync(cancellationToken);
         }
     }
 }
